@@ -1,0 +1,44 @@
+services:
+  db:
+    image: mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ttrackr
+      MYSQL_USER: task
+      MYSQL_PASSWORD: NrPoT9N9nSJxz2i0mdcw1pvEjSXWUrSK
+      MYSQL_ROOT_PASSWORD: qGqxoXC7zhtHnztRPNM9lkOpYxfqLAr7
+    healthcheck:
+            test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+            timeout: 20s
+            retries: 10
+  tasktrackr-api:
+    image: dvd604/tasktrackr-api
+    restart: unless-stopped
+    environment:
+      DB_HOST: db
+      DB_USER: task
+      DB_PASSWORD: NrPoT9N9nSJxz2i0mdcw1pvEjSXWUrSK
+      DB_NAME: ttrackr
+      DB_PORT: 3306
+      SERVER_PORT: 3001
+      INTERFACE_ADDRESS: 0.0.0.0
+      ACCESS_TOKEN_SECRET: c5Rf2ZlPBoI6fLOGWbW9RwVgelKvaIqU
+    ports:
+      - 3001:3001
+    depends_on:
+      db:
+        condition: service_healthy
+  tasktrackr:
+    image: dvd604/tasktrackr
+    restart: unless-stopped
+    environment:
+      API_BASE: http://tasktrackr-api:3001
+      ACCESS_TOKEN_SECRET: c5Rf2ZlPBoI6fLOGWbW9RwVgelKvaIqU
+      SERVER_PORT: 3000
+      INTERFACE_ADDRESS: 0.0.0.0
+      DB_METHOD: db-api
+    ports:
+      - 3000:3000
+    depends_on:
+      tasktrackr-api:
+        condition: service_healthy
