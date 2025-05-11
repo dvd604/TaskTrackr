@@ -1,0 +1,46 @@
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md mt-6">
+            <form method="POST" action="/project/modal/add" id="addForm">
+                <div class="col-auto mb-3">
+                    <label for="inputProjectName" class="form-label">Project Name</label>
+                    <input name="name" type="text" class="form-control" id="inputProjectName" autocomplete="off">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary disabled" id="btnSubmit">Create</button>
+                    <button data-bs-dismiss="modal" class="btn btn-danger" onclick="return false;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+    function validateForm() {
+        let failed_validation = false;
+
+        const name = $('#inputProjectName').val();
+
+        const nameValidate = validateString(name);
+        if(nameValidate !== undefined){
+            setState('inputProjectName', nameValidate);
+
+            if(failed_validation === false && nameValidate === false){failed_validation = true;}
+        } else {
+            failed_validation = true;
+        }
+
+        if(failed_validation){
+            $('#btnSubmit').addClass("disabled");
+        } else {
+            $('#btnSubmit').removeClass("disabled");
+        }
+
+        return failed_validation;
+    }
+
+    $(document).ready(function(){
+        $('.form-control').on('input', validateForm);
+        validateForm();
+    });
+
+</script>

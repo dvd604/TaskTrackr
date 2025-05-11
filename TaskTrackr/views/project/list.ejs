@@ -1,0 +1,107 @@
+<%- include('../partials/head.ejs') %>
+<%- include('../partials/nav.ejs') %>
+<%- include('../partials/pageModal.ejs') %>
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col mt-6">
+            <div class="table-responsive">
+                <table class="table table-hover" style="width: 100%">
+                    <thead>
+                    <tr>
+                        <td colspan="5">
+                            <button onclick='openAddProject()' type="button" class="btn btn-success"
+                                    title="Add Project">
+                                <i class="fa-solid fa-plus"></i></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th style="width: 30%" scope="col">Project Name</th>
+                        <th style="width: 30%" scope="col">Users</th>
+                        <th style="width: 100%" scope="col">Tasks Complete</th>
+                        <th scope="col"></th>
+                        <th scope="col"></th>
+                        <th scope="col"></th>
+                        <th scope="col"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <% projects.forEach((project) => { %>
+                        <tr>
+                            <td><%= project.name %></td>
+                            <td><%= project.users %></td>
+                            <% let percent = Math.ceil(project.tasksComplete / project.tasksTotal * 100);
+                                if (isNaN(percent)) percent = 0;
+                            %>
+
+                            <td><%= project.tasksComplete %>/<%= project.tasksTotal %> (<%= percent %>%)</td>
+                            <td>
+                                <button onclick='inspect("<%= project.guid %>")' type="button" class="btn btn-primary"
+                                        title="Edit Project">
+                                    <i class="fa-solid fa-pen-to-square"></i></button>
+                            </td>
+                            <td>
+                                <button onclick='showTasks("<%= project.guid %>")' type="button" class="btn btn-success"
+                                        title="See Tasks">
+                                    <i class="fa-solid fa-magnifying-glass"></i></button>
+                            </td>
+                            <td>
+                                <% const disabled = project.tasksTotal > 0 ? "disabled" : ""; %>
+
+                                <button onclick='tryDelete("<%= project.guid %>")' type="button"
+                                        class="btn btn-danger <%= disabled %>" title="Delete Project">
+                                    <i class="fa-solid fa-trash"></i></button>
+                            </td>
+                            <td>
+                                <button onclick='copyInvite("<%= project.guid %>")' type="button"
+                                        class="btn btn-success" title="Copy Project Invite Link">
+                                    <i class="fa-solid fa-clipboard"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script>
+        $(document).ready(function () {
+            $("#pageModal").on('hidden.bs.modal', (e) => {
+                location.reload();
+            });
+        });
+
+        function copyInvite(guid) {
+            $.get(`/project/invite/create?project_guid=${guid}`, function (data) {
+                const url = `${window.location.origin}/project/user/invite?project_guid=${guid}&invite_token=${data.invite}`;
+                navigator.clipboard.writeText(url);
+                ToastMaker('Copied to Clipboard!');
+            });
+        }
+
+        function inspect(guid) {
+            $.get(`/project/modal/inspect?guid=${guid}`, function (data) {
+                $("#pageModal").modal('show');
+                $("#pageModalData").html(data);
+            });
+        }
+
+        function tryDelete(guid) {
+            $.get(`/project/modal/delete?guid=${guid}`, function (data) {
+                location.reload();
+            });
+        }
+
+        function showTasks(guid) {
+            window.location.href = `/task/list?project=${guid}`;
+        }
+
+        function openAddProject() {
+            $.get(`/project/modal/add`, function (data) {
+                $("#pageModal").modal('show');
+                $("#pageModalData").html(data);
+            });
+        }
+    </script>
+</div>
+<%- include('../partials/foot.ejs') %>

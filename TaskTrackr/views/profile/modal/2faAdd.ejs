@@ -1,0 +1,21 @@
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md mt-6">
+            <h5>To enable 2FA, scan the below QR code in an authenticator app and enter the 6 digit generated code:</h5>
+            <img id="qrcode" src="<%=image_url%>" alt="qrcode">
+            <form class="my-3" method="POST" action="/profile/modal/2fa">
+                <div class="form-group">
+                    <label for="otpCode">One Time Passcode</label>
+                    <input name="otp" type="text" class="form-control" id="otpCode">
+                </div>
+                <div class="text-center py-3">
+                    <button type="submit" class="btn btn-primary">Verify</button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+<script>
+
+</script>

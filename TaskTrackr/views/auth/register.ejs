@@ -1,0 +1,108 @@
+<%- include('../partials/head.ejs') %>
+<%- include('../partials/nav.ejs') %>
+
+<% if (errors){ %>
+    <%- include('../partials/alertModal.ejs', {modalTitle: "Failed to register", modalText: errors}) %>
+<% } %>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <form class="p-3" style="max-width: 970px;" method="POST" onsubmit="handleSubmit()">
+                <div class="form-group p-3">
+                    <label for="inputEmail">Email address</label>
+                        <input name="email" type="email" class="form-control" id="inputEmail" aria-describedby="emailHelp"
+                               placeholder="Enter email">
+                    <small id="emailHelp" class="form-text text-muted">We'll never share your email with anyone
+                        else.</small>
+                </div>
+                <div class="form-group p-3">
+                    <label for="inputName">First name</label>
+                    <input name="name" type="text" class="form-control" id="inputName"
+                           placeholder="Enter First name" autocomplete="off">
+                </div>
+                <div class="form-group p-3">
+                    <label for="inputUser">Username</label>
+                    <input name="username" type="text" class="form-control" id="inputUser"
+                           placeholder="Enter username" autocomplete="off">
+                </div>
+                <div class="form-group p-3">
+                    <label for="inputPassword">Password</label>
+                    <input name="password" type="password" class="form-control" id="inputPassword" placeholder="Password" autocomplete="off">
+                </div>
+
+                <div class="form-group p-3">
+                    <label for="inputRepassword">Confirm Password</label>
+                    <input name="repassword" type="password" class="form-control" id="inputRepassword" placeholder="Password" autocomplete="off">
+                    <div id="passwordMatch" class="invalid-feedback">Passwords do not match</div>
+                </div>
+                <div class="px-3 text-center">
+                    <button id="btnSubmit" type="submit" class="btn btn-primary p-3 disabled">Register</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    let lastValidate = 0;
+
+    function validateForm(){
+        const match = $('#inputRepassword').val() === $('#inputPassword').val();
+        const length = $('#inputRepassword').val().length;
+        let failed_validation = false;
+
+        $("#passwordMatch").css("visibility", !match ? "visible" : "hidden");
+        if(match && length > 0){
+            setValid('inputRepassword');
+            setValid('inputPassword');
+        } else {
+            setInvalid('inputRepassword');
+            setInvalid('inputPassword');
+            failed_validation = true;
+        }
+
+        const email = $('#inputEmail').val();
+
+        if(email.length > 0 && email.length < 3){
+            setInvalid('inputEmail');
+            failed_validation = true;
+        } else if (email.length > 3){
+            if(validateEmail(email)){
+                setValid('inputEmail');
+            } else{
+                setInvalid('inputEmail');
+                failed_validation = true;
+            }
+        }
+
+        const name = $('#inputName').val();
+        if(name.length > 0)
+        {
+            setState('inputName', name.length > 3);
+            if(name.length <= 3)
+                failed_validation = true;
+        }
+
+        const username = $('#inputUser').val();
+        if(username.length > 0)
+        {
+            setState('inputUser', username.length > 3);
+            if(username.length <= 3)
+                failed_validation = true;
+        }
+
+
+
+        if(failed_validation){
+            $('#btnSubmit').addClass("disabled");
+        } else {
+            $('#btnSubmit').removeClass("disabled");
+        }
+    }
+
+    $(document).ready(function () {
+        $('.form-control').on('keyup', validateForm);
+    })
+</script>
+<%- include('../partials/foot.ejs') %>

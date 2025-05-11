@@ -1,0 +1,322 @@
+<%- include('../partials/head.ejs') %>
+<%- include('../partials/nav.ejs') %>
+<%- include('../partials/pageModal.ejs') %>
+<div class="container-fluid">
+    <div class="row mt-3">
+        <div class="col-lg-2 col-12 pt-1 pt-lg-0">
+            <button onclick='openAddTask()' type="button" class="btn btn-success" title="Add Project">
+                <i class="fa-solid fa-plus"></i></button>
+        </div>
+        <div class="col-lg-2 col-6 pt-1 pt-lg-0">
+            <div class="dropdown position-static">
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="taskStatusDropdown"
+                        data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Filter Task Status
+                </button>
+                <div class="dropdown-menu checkbox-menu" aria-labelledby="taskStatusDropdown">
+                    <% status.forEach(type => { %>
+                        <% const checked = type.name === "Archived" ? "" : "checked" %>
+                        <label class="checkbox-label">
+                            <input class="checkbox-input" id="displayStatus<%= type.status_id %>"
+                                   type="checkbox" <%= checked %>><%= type.name %>
+                        </label>
+                    <% }); %>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2 col-6 pt-1 pt-lg-0">
+            <div class="dropdown position-static">
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="taskPriorityDropdown"
+                        data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Filter Task Priority
+                </button>
+                <div class="dropdown-menu checkbox-menu" aria-labelledby="taskPriorityDropdown">
+                    <% priority.forEach(type => { %>
+                        <label class="checkbox-label">
+                            <input class="checkbox-input" id="displayPriority<%= type.priority_id %>"
+                                   type="checkbox" checked><%= type.text %>
+                        </label>
+                    <% }); %>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2 col-6 pt-1 pt-lg-0">
+            <div class="dropdown position-static">
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="ownershipDropdown"
+                        data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Filter Ownership
+                </button>
+                <div class="dropdown-menu checkbox-menu" aria-labelledby="ownershipDropdown">
+                    <label class="checkbox-label">
+                        <input class="checkbox-input" id="filterOwnershipOwned" type="checkbox" checked>Owned
+                        by me
+                    </label>
+                    <label class="checkbox-label">
+                        <input class="checkbox-input" id="filterOwnershipAssigned" type="checkbox" checked>Assigned to me
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2 col-6 pt-1 pt-lg-0">
+            <div class="dropdown position-static">
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="sortingDropdown"
+                        data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Default Sorting
+                </button>
+                <div class="dropdown-menu" aria-labelledby="sortingDropdown">
+                    <a class="dropdown-item" onclick="setSort(undefined)">Default Sorting</a>
+                    <a class="dropdown-item" onclick="setSort('name')">Sort by Name</a>
+                    <a class="dropdown-item" onclick="setSort('owner')">Sort by Owner</a>
+                    <a class="dropdown-item" onclick="setSort('assignee')">Sort by Assignee</a>
+                    <a class="dropdown-item" onclick="setSort('status')">Sort by Status</a>
+                    <a class="dropdown-item" onclick="setSort('date')">Sort by Due Date</a>
+                    <a class="dropdown-item" onclick="setSort('priority')">Sort by Priority</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col mt-6 my-lg-0 py-lg-0">
+            <div class="table-responsive">
+                <table class="table table-hover task-table" style="width: 100%;">
+                    <thead>
+                    <tr>
+                        <th class="mobile-wide" scope="col">Name</th>
+                        <th class="wide-display" scope="col">Project</th>
+                        <th class="wide-display" scope="col">Owned by</th>
+                        <th class="med-display med-wide" scope="col">Assigned to</th>
+                        <th class="mobile-fill" scope="col">Status</th>
+                        <th class="wide-display" scope="col">Due Date</th>
+                        <th class="wide-display desktop-fill" scope="col">Priority</th>
+                        <th scope="col"></th>
+                        <th scope="col"></th>
+                        <th scope="col"></th>
+                    </tr>
+                    </thead>
+                    <tbody id="taskList" class="mb-9">
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script>
+        function getTableRow(task) {
+            const time = new Date(task.due_date * 1000);
+            const timeDisp = time.toLocaleDateString('en-gb');
+
+            let statusButton = `<td class="mobile-fit">
+                                <button onclick='setStatus("${task.guid}", ${task.status_id + 1})'
+                                        type="button"
+                                        class="btn btn-${task.statusColour}"
+                                        title="Mark ${task.nextStatus}">${task.statusButton}</button>
+                            </td>`;
+
+            let disabled = "";
+            if (task.status_id >= 3 || task.ownerName !== username) disabled = "disabled";
+
+            let deleteButton = `<td class="wide-display" >
+                            <button onclick='tryDelete("${task.guid}")' type="button"
+                                    class="btn btn-danger ${disabled}" title="Delete Task"><i
+                                        class="fa-solid fa-trash"></i>
+                            </button>
+                        </td>`
+
+            if (!task.statusButton) statusButton = "<td></td>";
+
+            return `<tr ${getRowColour(task)}>
+                        <td class="mobile-wide">${task.name}</td>
+                        <td class="wide-display">${task.project}</td>
+                        <td class="wide-display">${task.ownerName}</td>
+                        <td class="med-display med-wide">${task.assignedName}</td>
+                        <td class="mobile-fill">${task.status}</td>
+                        <td class="wide-display">${timeDisp}</td>
+                        <td class="wide-display">${task.priority}</td>
+                        <td class="mobile-fit">
+                            <button onclick='inspect("${task.guid}")' type="button" class="btn btn-primary title="Edit Task">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                        </td>
+                        ${statusButton}
+                        ${deleteButton}
+                    </tr>`
+        }
+
+        function getRowColour(task) {
+            if (task.status_id === 4) return "class=table-secondary";
+
+            const date = task.due_date;
+            const time = new Date(date * 1000);
+            const inPast = time < Date.now();
+
+            if (inPast) return 'class=table-danger';
+
+            time.setDate(time.getDate() - 7);
+            const within7Days = Date.now() > time;
+
+            if (within7Days) return 'class=table-warning';
+            return "";
+        }
+
+        function populateTable() {
+            $("#taskList").empty();
+            displayTasks.forEach(task => {
+
+                const displayTaskStatus = $(`#displayStatus${task.status_id}`);
+                const statusChecked = displayTaskStatus.is(':checked');
+
+                const displayTaskPriority = $(`#displayPriority${task.priority_id}`);
+                const priorityChecked = displayTaskPriority.is(':checked');
+
+                if (statusChecked && priorityChecked) {
+                    const showOwned = $('#filterOwnershipOwned').is(':checked');
+                    const showAssigned = $('#filterOwnershipAssigned').is(':checked');
+                    let displayTask = true;
+
+                    if (showOwned && task.ownerName === username) {
+                        displayTask = true;
+                    } else if (!showOwned && task.ownerName === username) {
+                        displayTask = false;
+                    }
+
+                    if (showAssigned && task.assignedName === username) {
+                        displayTask = true;
+                    } else if (!showAssigned && task.assignedName === username) {
+                        displayTask = false;
+                    }
+
+                    if(displayTask)
+                        $('#taskList').append(getTableRow(task));
+                }
+            });
+        }
+
+        const username = "<%- username %>";
+        let tasks = <%- JSON.stringify(tasks) %>;
+        let displayTasks = undefined;
+
+        $(document).ready(function () {
+            const params = new URLSearchParams(window.location.search);
+            const projectFilter = params.get('project');
+
+
+            if(projectFilter)
+                tasks = tasks.filter(task => task.project_guid === projectFilter);
+
+            displayTasks = JSON.parse(JSON.stringify(tasks));
+            populateTable();
+
+            $('.checkbox-menu input:checkbox').on('change', function () {
+                displayTasks = getSorting();
+                populateTable();
+            });
+
+            $(".checkbox-menu").on("change", "input[type='checkbox']", function () {
+                $(this).closest("li").toggleClass("active", this.checked);
+            });
+        });
+
+        let sortType = undefined;
+        function setSort(type){
+            const displayText = {undefined:"Default Sorting",
+                name:"Sort by Name",
+                owner:"Sort by Owner",
+                assignee:"Sort by Assignee",
+                status:"Sort by Status",
+                date:"Sort by Due Date",
+                priority:"Sort by Priority"};
+
+            $('#sortingDropdown').html(displayText[type]);
+
+            sortType = type;
+            displayTasks = getSorting();
+            populateTable();
+        }
+
+        function sort(arr, func) {
+            return arr.concat().sort(func);
+        }
+
+        function getSorting(){
+            if(sortType===undefined) return tasks;
+
+            switch (sortType) {
+                case 'name':
+                    return sort(tasks, function (a, b) {
+                        const textA = a.name.toUpperCase();
+                        const textB = b.name.toUpperCase();
+
+                        return textA.localeCompare(textB);
+                    });
+                case 'owner':
+                    return sort(tasks, function (a, b) {
+                        const textA = a.ownerName.toUpperCase();
+                        const textB = b.ownerName.toUpperCase();
+
+                        return textA.localeCompare(textB);
+                    });
+                case 'status':
+                    return sort(tasks, function (a, b) {
+                        return b.status_id - a.status_id;
+                    });
+                case 'date':
+                    return sort(tasks, function (a, b) {
+                        return b.due_date - a.due_date;
+                    });
+
+                case 'priority':
+                    return sort(tasks, function (a, b) {
+                        return b.priority_id - a.priority_id;
+                    });
+                    break;
+                case 'assignee':
+                    return sort(tasks, function (a, b) {
+                        const textA = a.assignedName.toUpperCase();
+                        const textB = b.assignedName.toUpperCase();
+
+                        return textA.localeCompare(textB);
+                    });
+            }
+            return tasks;
+        }
+
+        function inspect(guid) {
+            $.get(`/task/modal/inspect?guid=${guid}`, function (data) {
+                $("#pageModal").modal('show');
+                $("#pageModalData").html(data);
+            });
+        }
+
+        function openAddTask() {
+            $.get(`/task/modal/add`, function (data) {
+                $("#pageModal").modal('show');
+                $("#pageModalData").html(data);
+            });
+        }
+
+        function setStatus(guid, status) {
+            $.ajax({
+                method: "POST",
+                url: "/task/status/set",
+                data: `guid=${guid}&status=${status}`
+            }).done(function (res) {
+                location.reload();
+            });
+        }
+
+        function tryDelete(guid)
+        {
+            $.ajax({
+                method: "GET",
+                url: `/task/remove?guid=${guid}`
+            }).done(function (res) {
+                location.reload();
+            });
+        }
+
+        $('.checkbox-menu').on('click', function (e) {
+            e.stopPropagation();
+        });
+    </script>
+</div>
+<%- include('../partials/foot.ejs') %>

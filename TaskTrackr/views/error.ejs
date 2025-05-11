@@ -1,0 +1,19 @@
+<%- include('./partials/head.ejs') %>
+<%- include('./partials/nav.ejs') %>
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-6 mt-6">
+            <h1><%= message %></h1>
+            <h2><%= error.status %></h2>
+            <pre><%= error.stack %></pre>
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-md-6 mt-6">
+            <h1>Error ID: <%= sentry_id %></h1>
+        </div>
+    </div>
+</div>
+<%- include('./partials/foot.ejs') %>
+
+

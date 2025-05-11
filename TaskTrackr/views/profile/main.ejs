@@ -1,0 +1,256 @@
+<%- include('../partials/head.ejs') %>
+<%- include('../partials/nav.ejs') %>
+<%- include('../partials/pageModal.ejs') %>
+<% if (alert){ %>
+    <%- include('../partials/alertModal.ejs', {modalTitle: '', modalText: alert}) %>
+<% } %>
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-4 py-3">
+            <h4>Two-factor Authentication</h4>
+            <%
+                let text = 'Enable 2FA';
+                if(has2FA)
+                    text = 'Disable 2FA';
+
+            %>
+            <button type="button" class="btn btn-primary" onclick="open2FAModal()"><%=text%></button>
+        </div>
+        <div class="col-md-4 py-3">
+            <h4>Toggle Colour Scheme</h4>
+            <button type="button" class="btn btn-primary" onclick="toggleColour()">Toggle</button>
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-md-8 mt-6 py-3">
+            <h4>Profile</h4>
+            <form method="POST" action="/profile/name" id="nameForm">
+                <div class="col-auto mb-3">
+                    <label for="inputDisplayName" class="form-label">Display Name</label>
+                    <input name="name" type="text" class="form-control nameInput" id="inputDisplayName" value="<%= user.name %>">
+                </div>
+                <div class="col-auto mb-3">
+                    <label for="inputEmail" class="form-label">Email Address</label>
+                    <input name="email" class="form-control nameInput" id="inputEmail" value="<%= user.email %>">
+                </div>
+                <button type="submit" class="btn btn-primary disabled" id="btnNameSubmit">Save</button>
+            </form>
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-md-8 mt-6 py-3">
+            <h4>Change Password</h4>
+            <form method="POST" action="/profile/pass" id="passForm">
+                <div class="col-auto mb-3">
+                    <label for="inputOldPassword" class="form-label">Old Password</label>
+                    <input name="oldPassword" type="password" class="form-control passInput" id="inputOldPassword" placeholder="******">
+                </div>
+                <div class="col-auto mb-3">
+                    <label for="inputPassword" class="form-label">New Password</label>
+                    <input name="password" type="password" class="form-control passInput" id="inputPassword" placeholder="******">
+                </div>
+                <div class="col-auto mb-3">
+                    <label for="inputRepassword" class="form-label">Confirm Password</label>
+                    <input name="repassword" type="password" class="form-control passInput" id="inputRepassword"
+                           placeholder="******">
+                    <div id="passwordMatch" class="invalid-feedback">Passwords do not match</div>
+                </div>
+                <button type="submit" class="btn btn-primary disabled" id="btnPassSubmit">Save</button>
+            </form>
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-md-8 mt-6 py-3">
+            <h4>Auth Tokens</h4>
+            <h6>Auth tokens are a way to allow third party applications to interface with TaskTrackr - they remove the
+                need to share your password.</h6>
+            <h6>However, they should be treated with the same caution as passwords!</h6>
+
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Token Name</th>
+                        <th>Created On</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+
+                    <% tokens.forEach(token => { %>
+                        <tr>
+                            <%
+                                const time = new Date(token.create_time * 1000);
+                                const timeDisp = time.toLocaleString();
+                            %>
+
+                            <td><%= token.name %></td>
+                            <td><%= timeDisp %></td>
+                            <td>
+                                <button onclick='tryDelete("<%=token.name%>")' type="button" class="btn btn-danger"
+                                        title="Delete Token"><i class="fa-solid fa-ban"></i></button>
+                            </td>
+                        </tr>
+                    <% }); %>
+
+                    </tbody>
+                </table>
+            </div>
+            <form id="formCreateToken" class="mt-4" method="POST" action="/profile/token/add">
+                <div class="col-md-4 mb-3">
+                    <label for="inputTokenName" class="form-label">Create new Token</label>
+                    <div class="input-group">
+                        <input name="token_name" type="text" class="form-control" id="inputTokenName"
+                               placeholder="Token Name">
+                        <button type="submit" class="btn btn-primary" id="btnCreateToken">Create</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+
+    function validateNameForm() {
+        let failed_validation = false;
+
+        const name = $('#inputDisplayName').val();
+        const email = $('#inputEmail').val();
+
+        const nameValidate = validateString(name);
+        if(nameValidate !== undefined){
+            setState('inputDisplayName', nameValidate);
+
+            if(nameValidate === false){failed_validation = true;}
+        } else {
+            failed_validation = true;
+        }
+
+        const emailValidate = validateString(email);
+        if(emailValidate){
+            const validEmail = validateEmail(email);
+            setState('inputEmail', validEmail);
+
+            if(!validEmail){failed_validation = true;}
+        } else {
+            failed_validation = true;
+        }
+
+        if(failed_validation){
+            $('#btnNameSubmit').addClass("disabled");
+        } else {
+            $('#btnNameSubmit').removeClass("disabled");
+        }
+
+        return failed_validation;
+    }
+
+    function validatePassForm() {
+        let failed_validation = false;
+
+        const match = $('#inputRepassword').val() === $('#inputPassword').val();
+        const length = $('#inputRepassword').val().length;
+
+        const oldPass = $('#inputOldPassword').val();
+
+        const passValidate = validateString(oldPass);
+        if(passValidate !== undefined){
+            setState('inputOldPassword', passValidate);
+
+            if(passValidate === false){failed_validation = true;}
+        } else {
+            failed_validation = true;
+        }
+
+        $("#passwordMatch").css("visibility", !match ? "visible" : "hidden");
+        if(match && length > 0){
+            setValid('inputRepassword');
+            setValid('inputPassword');
+        } else {
+            setInvalid('inputRepassword');
+            setInvalid('inputPassword');
+            failed_validation = true;
+        }
+
+        if(failed_validation){
+            $('#btnPassSubmit').addClass("disabled");
+        } else {
+            $('#btnPassSubmit').removeClass("disabled");
+        }
+
+        return failed_validation;
+    }
+
+    function tryDelete(id) {
+        $.ajax({
+            method: "POST",
+            url: "/profile/token/delete",
+            data: `token_name=${id}`
+        }).done(function (res) {
+            location.reload();
+        });
+    }
+
+    function open2FAModal() {
+        $.get(`/profile/modal/2fa`, function (data) {
+            $("#pageModal").modal('show');
+            $("#pageModalData").html(data);
+        });
+    }
+
+    function toggleColour(){
+        const curScheme = $('html').attr('data-bs-theme');
+        let desiredScheme = '';
+
+        if(!curScheme){
+            desiredScheme = 'dark';
+        } else {
+            if(curScheme === 'dark'){
+                desiredScheme = 'light';
+            } else {
+                desiredScheme = 'dark';
+            }
+        }
+
+        $('html').attr('data-bs-theme', desiredScheme);
+        localStorage.setItem('cScheme', desiredScheme);
+    }
+
+    $(document).ready(function () {
+        $('.passInput').on('input', validatePassForm);
+        $('.nameInput').on('input', validateNameForm);
+
+        validateNameForm();
+
+        $('#formCreateToken').on('submit', function (e) {
+            e.preventDefault();
+
+            const name = $('#inputTokenName').val();
+
+            if(!name || name.length < 3) {
+                $('#pageModalData').html(`<div>Token names must be longer than 3 characters</div>`);
+                $('#pageModal').on('hidden.bs.modal', function () {
+                    location.reload();
+                });
+                $('#pageModal').modal('show');
+                return;
+            }
+
+            $.ajax({
+                method: "POST",
+                url: "/profile/token/add",
+                data: `token_name=${name}`
+            }).done(function (res) {
+                $('#inputTokenName').val("");
+                navigator.clipboard.writeText(res.token);
+                $('#pageModalData').html(`<div>Token Copied to Clipboard</div>`);
+                $('#pageModal').on('hidden.bs.modal', function () {
+                    location.reload();
+                });
+                $('#pageModal').modal('show');
+            });
+
+        });
+    });
+</script>
+<%- include('../partials/foot.ejs') %>

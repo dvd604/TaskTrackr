@@ -1,0 +1,106 @@
+<script>
+    var userData = <%-JSON.stringify(users)%>;
+</script>
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md mt-6">
+            <form method="POST" action="/task/modal/add" id="addForm">
+                <div class="col-auto mb-3">
+                    <label for="inputTaskName" class="form-label">Task Name</label>
+                    <input name="name" type="text" class="form-control" id="inputTaskName" autocomplete="off">
+                </div>
+                <div class="col-auto mb-3">
+                    <label for="inputTaskDesc" class="form-label">Task Description</label>
+                    <textarea name="desc" class="form-control" id="inputTaskDesc" rows="3" autocomplete="off"></textarea>
+                </div>
+                <div class="col-auto mb-3">
+                    <label for="selectTaskProject" class="form-label">Task Project</label>
+                    <select name="project_guid" id="selectTaskProject" class="form-select" aria-label="Select a Project">
+                        <option value="null" selected>No project</option>
+                        <% projects.forEach((proj) => { %>
+                            <option value="<%= proj.guid %>"%>><%= proj.name %></option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div class="col-auto mb-3">
+                    <label for="inputDueDate" class="form-label">Due Date</label>
+                    <input type="date" id="inputDueDate" name="due_date" class="form-control" autocomplete="off">
+                </div>
+                <div class="col-auto mb-3">
+                    <label for="selectPriority" class="form-label">Task Priority</label>
+                    <select name="priority_id" id="selectPriority" class="form-select" aria-label="Select a Priority">
+                        <% priority.forEach((pr) => { %>
+                            <option value="<%= pr.priority_id %>"%>><%= pr.text %></option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div class="col-auto mb-3">
+                    <label for="selectAssignedUser" class="form-label">Assigned User</label>
+                    <select disabled name="user_guid" id="selectAssignedUser" class="form-select" aria-label="Select a User">
+                        <option value="null" selected>Myself</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary disabled" id="btnSubmit">Save</button>
+                    <button data-bs-dismiss="modal" class="btn btn-danger" onclick="return false;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+    function validateForm() {
+        let failed_validation = false;
+
+        const name = $('#inputTaskName').val();
+        const dueDate = $('#inputDueDate').val();
+
+        const nameValidate = validateString(name);
+        if(nameValidate !== undefined){
+            setState('inputTaskName', nameValidate);
+
+            if(failed_validation === false && nameValidate === false){failed_validation = true;}
+        } else {
+            failed_validation = true;
+        }
+
+        const dateValidate = validateString(dueDate);
+        if(dateValidate !== undefined){
+            setState('inputDueDate', dateValidate);
+
+            if(failed_validation === false && dateValidate === false){failed_validation = true;}
+        } else {
+            failed_validation = true;
+        }
+
+        if(failed_validation){
+            $('#btnSubmit').addClass("disabled");
+        } else {
+            $('#btnSubmit').removeClass("disabled");
+        }
+
+        return failed_validation;
+    }
+
+    $(document).ready(function(){
+        $('.form-control').on('input', validateForm);
+
+        $('#selectTaskProject').on('change', function(){
+            const selectedProject = $('#selectTaskProject :selected').text();
+
+            if(selectedProject === "No project"){
+                $('#selectAssignedUser').prop('disabled', true).find('option').remove().end();
+                $('#selectAssignedUser').append(`<option value="null">Myself</option>`);
+                return;
+            }
+
+            const users = userData[selectedProject];
+            $('#selectAssignedUser').prop('disabled', false).find('option').remove().end();
+            users.forEach((user) => {
+                $('#selectAssignedUser').append(`<option value="${user.guid}">${user.name}</option>`);
+            });
+
+        });
+    });
+</script>

@@ -1,0 +1,19 @@
+<%- include('../partials/head.ejs') %>
+<%- include('../partials/nav.ejs') %>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <form class="p-3" style="max-width: 970px;" method="POST">
+                <div class="form-group p-3">
+                    <label for="inputOTP">Enter 2FA Code from Authenticator app</label>
+                        <input name="otp" type="text" class="form-control" id="inputOTP"
+                               placeholder="Enter OTP">
+                </div>
+                <div class="px-3 text-center">
+                    <button type="submit" class="btn btn-primary p-3">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<%- include('../partials/foot.ejs') %>

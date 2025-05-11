@@ -1,0 +1,134 @@
+<script>
+    var userData = <%-JSON.stringify(users)%>;
+    var assignedId = <%-task.assigned_user_id%>;
+</script>
+
+<% let readonly = "";
+if(!canEdit){readonly = "disabled"}%>
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md mt-6">
+            <form method="POST" action="/task/modal/inspect/" id="inspectForm">
+                <input type="hidden" name="task_guid" value="<%-task.guid%>">
+                <div class="col-auto mb-3">
+                    <label for="inputTaskName" class="form-label">Task Name</label>
+                    <input name="name" type="text" class="form-control" id="inputTaskName" value="<%= task.name %>" autocomplete="off" <%=readonly%>>
+                </div>
+                <div class="col-auto mb-3">
+                    <label for="inputTaskDesc" class="form-label">Task Description</label>
+                    <textarea name="desc" class="form-control" id="inputTaskDesc" rows="3" autocomplete="off" <%=readonly%>><%= task.desc %></textarea>
+                </div>
+                <div class="col-auto mb-3">
+                    <label for="selectTaskProject" class="form-label">Task Project</label>
+                    <select name="project_guid" id="selectTaskProject" class="form-select" aria-label="Default select example" <%=readonly%>>
+                        <option value="null" <% if (task.project_id === undefined || task.project_id === null){ %>selected
+                                <% } %>
+                        >No project</option>
+                        <% projects.forEach((proj) => { %>
+                            <option value="<%= proj.guid %>" <% if (task.project_id === proj.project_id){ %>selected
+                                    <% } %>
+                            ><%= proj.name %></option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div class="col-auto mb-3">
+                    <label for="inputDueDate" class="form-label">Due Date</label>
+                    <%const date = new Date(task.due_date*1000).toISOString().split('T')[0].slice(0,10);%>
+                    <input type="date" id="inputDueDate" name="dueDate" class="form-control" value="<%=date%>" autocomplete="off" <%=readonly%>>
+                </div>
+                <div class="col-auto mb-3">
+                    <label for="selectPriority" class="form-label">Task Priority</label>
+                    <select name="priority_id" id="selectPriority" class="form-select" aria-label="Select a Priority" <%=readonly%>>
+                        <% priority.forEach((pr) => { %>
+                            <%const selected = task.priority_id === pr.priority_id ? "selected" : "";%>
+                            <option <%=selected%> value="<%= pr.priority_id %>"%>><%= pr.text %></option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div class="col-auto mb-3">
+                    <label for="selectAssignedUser" class="form-label">Assigned User</label>
+                    <select name="user_guid" id="selectAssignedUser" class="form-select" aria-label="Select a User" <%=readonly%>>
+                    </select>
+                </div>
+                <div class="col-auto mb-3">
+                    <span>Task GUID: <%= task.guid %></span>
+                </div>
+                <div class="col-auto mb-3">
+                    <%
+                    const time = new Date(task.create_time * 1000);
+                    const timeDisp = time.toLocaleString('en-gb');
+                    %>
+                    <span>Task Created: <%= timeDisp %></span>
+                </div>
+                <div class="col-auto">
+                    <%if(canEdit){%>
+                        <button type="submit" class="btn btn-primary disabled" id="btnSubmit">Save</button>
+                        <button data-bs-dismiss="modal" class="btn btn-danger" onclick="return false;">Cancel</button>
+                    <%}%>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function validateForm() {
+        let failed_validation = false;
+
+        const name = $('#inputTaskName').val();
+        const dueDate = $('#inputDueDate').val();
+
+        const nameValidate = validateString(name);
+        if(nameValidate !== undefined){
+            setState('inputTaskName', nameValidate);
+
+            if(failed_validation === false && nameValidate === false){failed_validation = true;}
+        } else {
+            failed_validation = true;
+        }
+
+        const dateValidate = validateString(dueDate);
+        if(dateValidate !== undefined){
+            setState('inputDueDate', dateValidate);
+
+            if(failed_validation === false && dateValidate === false){failed_validation = true;}
+        } else {
+            failed_validation = true;
+        }
+
+        if(failed_validation){
+            $('#btnSubmit').addClass("disabled");
+        } else {
+            $('#btnSubmit').removeClass("disabled");
+        }
+
+        return failed_validation;
+    }
+
+    $(document).ready(function(){
+        validateForm();
+        $('.form-control').on('input', validateForm);
+
+        $('#selectTaskProject').on('change', function(){
+            const selectedProject = $('#selectTaskProject :selected').text();
+
+            if(selectedProject === "No project"){
+                $('#selectAssignedUser').prop('disabled', true).find('option').remove().end();
+                $('#selectAssignedUser').append(`<option selected value="null">Myself</option>`);
+                return;
+            }
+
+            const users = userData[selectedProject];
+            $('#selectAssignedUser').prop('disabled', false).find('option').remove().end();
+            users.forEach((user) => {
+                const selected = user.id === assignedId ? 'selected' : '';
+
+                $('#selectAssignedUser').append(`<option ${selected} value="${user.guid}">${user.name}</option>`);
+            });
+        });
+
+        $('#selectTaskProject').trigger('change');
+    });
+</script>

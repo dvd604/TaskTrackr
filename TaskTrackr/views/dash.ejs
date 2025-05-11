@@ -1,0 +1,84 @@
+<%- include('./partials/head.ejs') %>
+<%- include('./partials/nav.ejs') %>
+<div id="dashBody" class="container-fluid">
+    <div id="emptyRow" class="row justify-content-center">
+        <div class="col-md-6 mt-6">
+            <h4>Your dashboard will automatically populate when you add tasks and projects!</h4>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+
+    const datasets = <%-JSON.stringify(data)%>;
+
+    function createCard(dataset, row, id) {
+        const cardFormat = `
+        <div class="card m-3" style="width: 24rem;">
+            <canvas id="chartCanvas${id}" width="100px" height="100px"></canvas>
+            <div class="card-body">
+                <p class="card-text">${dataset.title}</p>
+            </div>
+        </div>`
+
+        $(`#row${row}`).append(cardFormat);
+        const ctx = document.getElementById(`chartCanvas${id}`);
+
+        let data = undefined;
+
+        if(dataset.format === 'line'){
+            data = {
+                labels: dataset.titles,
+                datasets: [{
+                    label: dataset.title,
+                    data: dataset.values,
+                    fill: true,
+                    borderColor: dataset.colour,
+                    tension: 0.2
+                }]
+            };
+        } else if (dataset.format === 'doughnut'){
+            data = {
+                labels: dataset.titles,
+                datasets: [{
+                    label: dataset.label,
+                    data: dataset.values,
+                    borderWidth: 1
+                }]
+            };
+        }
+
+        new Chart(ctx, {
+            type: dataset.format,
+            data: data
+        });
+    }
+
+    function createRow(){
+        const rowFormat = `<div id="row${$('.row').length}" class="row justify-content-center"></div>`;
+        $('#dashBody').append(rowFormat);
+    }
+
+    $(document).ready(function () {
+        if(datasets === undefined){
+            return;
+        }
+        const rows = Math.ceil(datasets.length/3);
+
+        let hasDrawn = 0;
+
+        for(let i = 0; i < rows; i++){
+            createRow();
+
+            for(let card = 0; card < 3; card++){
+                if(hasDrawn !== datasets.length) {
+                    createCard(datasets[hasDrawn], i+1, hasDrawn);
+                    hasDrawn++;
+                }
+            }
+        }
+        $('#emptyRow').remove();
+    });
+
+</script>
+<%- include('./partials/foot.ejs') %>

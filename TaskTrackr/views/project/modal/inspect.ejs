@@ -1,0 +1,153 @@
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md mt-6">
+            <form method="POST" action="/project/modal/inspect/" id="inspectForm">
+                <input type="hidden" name="project_guid" value="<%- project.guid %>">
+                <div class="col-auto mb-3">
+                    <label for="inputProjectName" class="form-label">Project Name</label>
+                    <input name="name" type="text" class="form-control" id="inputProjectName" value="<%= project.name %>" autocomplete="off">
+                </div>
+                <div class="col-auto mb-3">
+                    <label for="inputURL" class="form-label">Webhook URL</label>
+                    <% const whLoc = webhook === undefined ? "" : webhook.webhook_location; %>
+                    <input name="url" type="text" placeholder="Enter WebHook Url" class="form-control" id="inputURL"
+                           value="<%= whLoc %>" autocomplete="off">
+                </div>
+                <div class="col-auto mb-3">
+                    <label for="selectType" class="form-label">Webhook Type</label>
+                    <select class="form-select" id="selectType" name="webhook_type">
+                        <%
+                        let nullSelector = "selected";
+                        if (webhook !== undefined) {
+                            const webhookId = webhook.webhook_destination_id;
+                            if (webhookId !== undefined) nullSelector = "";
+                        }
+                        %>
+
+                        <option value="null" <%= nullSelector %>>Select Webhook Type</option>
+                        <% webhookTypes.forEach(wh=>{ %>
+                            <%
+                                let selected = "";
+                                if(webhook) {
+                                    const webhookId = webhook.webhook_destination_id;
+                                    selected = webhookId === wh.webhook_destination_id ? "selected" : "";
+                                }
+                            %>
+
+                            <option value="<%= wh.webhook_destination_id %>" <%= selected %>><%= wh.name %></option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div class="col-auto mb-3">
+                    <% const owner = users.find(u => {
+                        return u.user_id === project.owner_id
+                    }); %>
+                    <span>Project Owner: <%= owner.name %> (<%= owner.username %>)</span>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary disabled" id="btnSubmit">Save</button>
+                    <button data-bs-dismiss="modal" class="btn btn-danger" onclick="return false;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="row justify-content-center ">
+        <div class="spacer"></div>
+    </div>
+    <div class="row justify-content-center ">
+        <p class="form-label">Project Users</p>
+        <div class="table-responsive">
+            <table id="userTable" class="table">
+                <thead>
+                <tr>
+                    <th>Name</th>
+                    <th style="width:100%">Username</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <% users.forEach(user => { %>
+                    <tr>
+                        <td><%= user.name %></td>
+                        <td><%= user.username %></td>
+                        <td>
+                            <% let suppressDelete = user.username === owner.username %>
+
+                            <% if(showUserDelete && !suppressDelete){ %>
+                                <button onclick='removeUser("<%= user.guid %>", "<%= project.guid %>")' type="button"
+                                        class="btn btn-danger" title="Remove User"><i
+                                            class="fa-solid fa-ban"></i>
+                                </button>
+                            <% } %>
+                        </td>
+                    </tr>
+                <% }); %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script>
+    function validateForm() {
+        let failed_validation = false;
+
+        const name = $('#inputProjectName').val();
+        const url = $('#inputURL').val();
+        const webhook = $('#selectType').val();
+
+        const nameValidate = validateString(name);
+        if(nameValidate !== undefined){
+            setState('inputProjectName', nameValidate);
+
+            if(failed_validation === false && nameValidate === false){failed_validation = true;}
+        } else {
+            failed_validation = true;
+        }
+
+        const urlValidate = validateString(url);
+        if(urlValidate !== undefined){
+            setState('inputURL', urlValidate);
+
+            if(failed_validation === false && urlValidate === false){failed_validation = true;}
+        } else {
+            failed_validation = true;
+        }
+
+        if(webhook !== "null" && (!url || url === '')){
+            setState('inputURL', false);
+            setState('selectType', false);
+        } else {
+            setState('inputURL', true);
+            setState('selectType', true);
+        }
+
+        if(failed_validation){
+            $('#btnSubmit').addClass("disabled");
+        } else {
+            $('#btnSubmit').removeClass("disabled");
+        }
+
+        return failed_validation;
+    }
+
+    $(document).ready(function() {
+        $('.form-control').on('input', validateForm);
+        validateForm();
+
+        $('#selectType').on('change', (e) => {
+            const selected = $('#selectType').val();
+            if(selected === 'null')
+                $('#inputURL').val('');
+        });
+    });
+
+    function removeUser(user_guid, project_guid) {
+        $.ajax({
+            method: "POST",
+            url: "/project/user/remove",
+            data: `user_guid=${user_guid}&project_guid=${project_guid}`
+        }).done(function (res) {
+            location.reload();
+        });
+    }
+</script>

@@ -1,0 +1,107 @@
+body {
+  padding: 50px;
+  font: 20px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+a {
+  color: #00B7FF;
+}
+
+.mp-0{
+  margin:0 !important;
+  padding:0 !important;
+}
+
+.spacer {
+  padding-top: 40px;
+  padding-bottom: 40px
+}
+
+.checkbox-label {
+  display: block;
+  padding: 3px 10px;
+  clear: both;
+  font-weight: normal;
+  line-height: 1.42857143;
+  color: #333;
+  white-space: nowrap;
+  margin:0;
+  transition: background-color .4s ease;
+}
+.checkbox-input {
+  margin: 0px 5px;
+  top: 2px;
+  position: relative;
+}
+
+.checkbox-label:active {
+  background-color: #cbcbff;
+  font-weight:bold;
+}
+
+.checkbox-label:focus,.checkbox-label:hover {
+  background-color: #f5f5f5;
+}
+
+.checkbox-input:focus,
+.checkbox-input:hover {
+  background-color: #b8b8ff;
+}
+
+.wide-display{
+  width: 15%;
+}
+
+.desktop-fill{
+  width: 100%;
+}
+
+.mobile-fill{
+  width: 15%;
+}
+
+.mobile-wide{
+  width: 15%;
+}
+
+.med-wide{
+  width: 15%;
+}
+
+@media only screen and (max-width: 680px) {
+  .med-display{
+    display: none;
+    width: 0;
+  }
+
+  .med-wide{
+    width: 30%;
+  }
+}
+
+@media only screen and (max-width: 900px) {
+  .wide-display {
+    display: none;
+    width: 0;
+  }
+
+  .desktop-fill {
+    width: 0;
+  }
+
+  .mobile-fill {
+    width: 100%;
+  }
+
+  .mobile-wide {
+    width: 30%;
+  }
+
+  .med-wide{
+    width: 30%;
+  }
+
+  .mobile-fit{
+    width: fit-content;
+  }
+}
